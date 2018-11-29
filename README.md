@@ -41,11 +41,11 @@ The `latest` example above gets the latest job number from jenkins without match
 Creates a table of last matching jobs (gaps in numbers caused by filters):
 
 ```
-BUILD  UPDATED             RESULT
-189   2018-11-27 20:09:44  Some(Success)
-182   2018-11-26 17:22:24  Some(Success)
-160   2018-11-23 15:33:33  Some(Success)
-130   2018-11-22 12:08:15  Some(Success)
+BUILD  UPDATED              RESULT
+189    2018-11-27 20:09:44  Some(Success)
+182    2018-11-26 17:22:24  Some(Success)
+160    2018-11-23 15:33:33  Some(Success)
+130    2018-11-22 12:08:15  Some(Success)
 ```
 
 
@@ -86,14 +86,6 @@ Latest stable with rust installed:
 cargo install jenq # latest stable
 ```
 
-Latest master with rust installed:
-
-```sh
-git clone git@github.com:clux/jenq.git && cd jenq
-cargo build
-ln -sf $PWD/target/debug/jenq /usr/local/bin/jenq
-```
-
 Latest stable without rust installed:
 
 ```sh
@@ -110,6 +102,15 @@ Add this to your `~/.bash_completion` file:
 if hash jenq 2> /dev/null; then
     source <(jenq completions bash)
 fi
+```
+
+## Development
+Clone and build:
+
+```sh
+git clone git@github.com:clux/jenq.git && cd jenq
+cargo build
+ln -sf $PWD/target/debug/jenq /usr/local/bin/jenq
 ```
 
 ## License

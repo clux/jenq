@@ -15,7 +15,7 @@ test:
 	cargo test
 
 clippy:
-	cargo clippy -- --allow clippy::if_let_redundant_pattern_matching
+	cargo clippy -- --allow clippy::needless_pass_by_value
 
 doc:
 	cargo doc --all --all-features
