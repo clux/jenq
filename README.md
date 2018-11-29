@@ -41,7 +41,7 @@ The `latest` example above simply finds the latest job number from jenkins.
 Creates a table of last matching jobs (gaps in numbers caused by filters):
 
 ```
-BUILD  UPDATED              RESULT
+BUILD  UPDATED             RESULT
 189   2018-11-27 20:09:44  Some(Success)
 182   2018-11-26 17:22:24  Some(Success)
 160   2018-11-23 15:33:33  Some(Success)
@@ -66,7 +66,7 @@ jenq console myjobname
 jenq console myjobname 32
 ```
 
-Produces the raw console output, here's an excerpt from a [shipcat deploy job](https://github.com/Babylonpartners/shipcat) along with the expected jenkins gunk (massively truncated):
+Produces the raw console output, along with the expected jenkins gunk (here truncated):
 
 ```sh
 Started by upstream project "myjobname" build number 32
@@ -78,7 +78,6 @@ shipcat::kube: Waiting 65s for deployment webapp to rollout (not ready yet)
 shipcat::helm::direct: successfully rolled out webapp
 Finished: SUCCESS
 ```
-
 
 ## Installation
 Latest stable with rust installed:
