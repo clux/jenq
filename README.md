@@ -28,13 +28,13 @@ jenq console myjobname -f APP:myapp
 jenq latest myjobname
 ```
 
-**Filters work in all subcommands**, and match jenkins StringParameters. Here `myjobname` is assumed to have two string parameters: `APP`, and `VERSION`.
+**Filters can work in all subcommands**, and match jenkins StringParameters. Here `myjobname` is assumed to have two string parameters: `APP`, and `VERSION`.
 
-The `history` example above needs **both** values of the parameters to match.
+The `history` example above gets history where both values of the parameters match.
 
 The `console` example above gets the latest console output where the `APP` parameter matches.
 
-The `latest` example above simply finds the latest job number from jenkins.
+The `latest` example above gets the latest job number from jenkins without matching anything.
 
 
 ## jenq history
