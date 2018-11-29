@@ -1,81 +1,47 @@
 use chrono::{Utc, TimeZone};
-use jenkins_api::{JenkinsBuilder, Jenkins};
-use jenkins_api::job::CommonJob;
-use jenkins_api::build::{Build, CommonBuild};
-use jenkins_api::action::parameters::StringParameterValue;
-use jenkins_api::action::ParametersAction;
+use jenkins_api::{
+    JenkinsBuilder,
+    Jenkins,
+    job::CommonJob,
+    build::{Build, CommonBuild},
+    action::{ParametersAction, parameters::StringParameterValue},
+};
+
 use std::env;
 use std::collections::BTreeMap;
-
-#[derive(Debug)]
-struct JError {
-    inner: Context<JErrKind>,
-}
-// its associated enum
-#[derive(Clone, Eq, PartialEq, Debug, Fail)]
-enum JErrKind {
-    #[fail(display = "Failed to get jenkins job '{}'", _0)]
-    MissingJenkinsJob(String),
-     #[fail(display = "Failed to create jenkins client")]
-    JenkinsFailure,
-     #[fail(display = "JENKINS_API_URL not specified")]
-    MissingJenkinsUrl,
-     #[fail(display = "JENKINS_API_USER not specified")]
-    MissingJenkinsUser,
-}
 pub use failure::{Error, Fail, Context, Backtrace, ResultExt};
-use std::fmt::{self, Display};
-
-// boilerplate error wrapping (might go away)
-impl Fail for JError {
-    fn cause(&self) -> Option<&Fail> { self.inner.cause() }
-    fn backtrace(&self) -> Option<&Backtrace> { self.inner.backtrace() }
-}
-impl Display for JError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        Display::fmt(&self.inner, f)
-    }
-}
-impl From<JErrKind> for JError {
-    fn from(kind: JErrKind) -> JError {
-        JError { inner: Context::new(kind) }
-    }
-}
-impl From<Context<JErrKind>> for JError {
-    fn from(inner: Context<JErrKind>) -> JError {
-        JError { inner: inner }
-    }
-}
 pub type Result<T> = std::result::Result<T, Error>;
 
 // helpers
 
 fn env_user() -> Result<String> {
-    Ok(env::var("JENKINS_API_USER").context(JErrKind::MissingJenkinsUser)?)
+    Ok(env::var("JENKINS_API_USER")
+        .context(format_err!("JENKINS_API_USER not specified"))?
+    )
 }
 fn env_pass() -> Option<String> {
     env::var("JENKINS_API_TOKEN").ok()
 }
 
 fn env_url() -> Result<String> {
-    Ok(env::var("JENKINS_URL").context(JErrKind::MissingJenkinsUrl)?)
+    Ok(env::var("JENKINS_URL")
+        .context(format_err!("JENKINS_URL not specified"))?
+    )
 }
 
 fn get_client() -> Result<Jenkins> {
     Ok(JenkinsBuilder::new(&env_url()?)
         .with_user(&env_user()?, env_pass().as_ref().map(String::as_str))
         .build().map_err(|e| {
-            error!("Failed to create jenkins client {}", e);
-            JErrKind::JenkinsFailure
+            format_err!("Failed to create jenkins client {}", e)
         })?
     )
 }
 
 fn get_job(client: &Jenkins, job: &str) -> Result<CommonJob> {
-    Ok(client.get_job(job).map_err(|e| {
-        error!("Failed to get job {}", e);
-        JErrKind::MissingJenkinsJob(job.into())
-    })?)
+    Ok(client.get_job(job)
+        .context(format_err!("Failed to get jenkins job {}", job))
+    ?)
 }
 
 fn get_string_params(b: &CommonBuild) -> BTreeMap<String, String> {

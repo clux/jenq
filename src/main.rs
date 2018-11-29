@@ -21,7 +21,6 @@ use std::process;
 fn print_error_debug(e: &Error) {
     for cause in e.iter_chain().skip(1) {
         warn!("caused by: {}", cause);
-        //warn!("{:?}", cause); // debug for error-chain traces etc
     }
 }
 
