@@ -1,0 +1,14 @@
+[package]
+name = "jenq"
+version = "0.1.0"
+authors = ["clux <sszynrae@gmail.com>"]
+
+[dependencies]
+failure = "0.1.3"
+jenkins_api = "0.5.1"
+clap = "2.32.0"
+loggerv = "0.7.1"
+log = "0.4.6"
+chrono = "0.4.6"
+libc = "0.2.44"
+openssl-probe = "0.1.2"
