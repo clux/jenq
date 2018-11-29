@@ -43,7 +43,7 @@ fn build_cli() -> App<'static, 'static> {
         .setting(AppSettings::ColoredHelp)
         .setting(AppSettings::DeriveDisplayOrder)
         .global_settings(&[AppSettings::ColoredHelp])
-        .about("query jenkins for job results")
+        .about("query jenkins for jobs matching filters")
         .subcommand(SubCommand::with_name("completions")
             .about("Generates completion scripts for your shell")
             .arg(Arg::with_name("shell")
