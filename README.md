@@ -13,6 +13,8 @@ export JENKINS_API_TOKEN=API_TOKEN_FROM_USER_PAGE
 export JENKINS_API_USER=user.name
 ```
 
+The user only requires read access to the jobs you want to query.
+
 ## Usage
 Ask `jenq` for `history`, `latest`, or `console` for a named job, optionally specifying filters:
 
