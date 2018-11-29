@@ -1,0 +1,149 @@
+version: 2
+
+workflows:
+  version: 2
+  jenq_flow:
+    jobs:
+      - musl_build:
+          filters:
+            tags:
+              only: /^.*/
+      - cargo_test:
+          filters:
+            branches:
+              ignore:
+                - master
+      - docker_build:
+          requires:
+            - musl_build
+          filters:
+            branches:
+              only:
+                - master
+      - mac_build:
+          filters:
+            tags:
+              only: /^.*/
+            branches:
+              only:
+                - master
+      - github_release:
+          requires:
+            - musl_build
+            - mac_build
+          filters:
+            tags:
+              only: /^.*/
+            branches:
+              ignore: /.*/
+jobs:
+  musl_build:
+    docker:
+      - image: clux/muslrust:stable
+    working_directory: /volume
+    parallelism: 2
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+          - cargo.registry-musl-{{ .Environment.CACHE_VERSION }}
+      - restore_cache:
+          keys:
+          - target-musl-{{ .Environment.CACHE_VERSION }}
+      - run: cargo build --release --bin jenq
+      - save_cache:
+          key: target-musl-{{ .Environment.CACHE_VERSION }}
+          paths:
+            - target
+      - save_cache:
+          key: cargo.registry-musl-{{ .Environment.CACHE_VERSION }}
+          paths:
+            - /root/.cargo
+      # Ensure we have a built `jenq.x86_64-unknown-linux-musl` at workspace root
+      - run: mv target/x86_64-unknown-linux-musl/release/jenq{,.x86_64-unknown-linux-musl}
+      - persist_to_workspace:
+          root: target/x86_64-unknown-linux-musl/release/
+          paths:
+            - jenq.x86_64-unknown-linux-musl
+
+  cargo_test:
+    docker:
+      - image: clux/muslrust:stable
+    working_directory: /volume
+    environment:
+      - RUST_BACKTRACE: "full"
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+          - cargo.registry-test-{{ .Environment.CACHE_VERSION }}
+      - restore_cache:
+          keys:
+          - target-test-{{ .Environment.CACHE_VERSION }}
+      - run: cargo test -- --nocapture
+      - run: cargo doc --no-deps --lib
+      - save_cache:
+          key: target-test-{{ .Environment.CACHE_VERSION }}
+          paths:
+            - target
+      - save_cache:
+          key: cargo.registry-test-{{ .Environment.CACHE_VERSION }}
+          paths:
+            - /root/.cargo
+
+  docker_build:
+    machine: true
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run: docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
+      - run: make build
+      - run: make install
+      - run: make tag-latest
+      - run: make tag-semver
+
+  mac_build:
+    macos:
+      xcode: "9.0"
+    working_directory: /Users/distiller/project
+    parallelism: 2
+    steps:
+      - checkout
+      - run:
+          name: Install rust
+          command: |
+            curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
+      - restore_cache:
+          key: cargo.registry-mac-{{ .Environment.CACHE_VERSION }}
+      - restore_cache:
+          key: target-mac-{{ .Environment.CACHE_VERSION }}
+      - run:
+          name: Build
+          command: ~/.cargo/bin/cargo build --verbose --release --bin jenq
+      - save_cache:
+          key: target-mac-{{ .Environment.CACHE_VERSION }}
+          paths:
+            - target
+      - save_cache:
+          key: cargo.registry-mac-{{ .Environment.CACHE_VERSION }}
+          paths:
+            - /Users/distiller/.cargo
+      # Ensure we have a built `jenq.x86_64-apple-darwin` at workspace root
+      - run: mv target/release/jenq{,.x86_64-apple-darwin}
+      - persist_to_workspace:
+          root: target/release/
+          paths:
+            - jenq.x86_64-apple-darwin
+
+  github_release:
+    working_directory: ~/project
+    docker:
+      - image: circleci/golang:1.8
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run: go get github.com/tcnksm/ghr
+      - run: make releases
+      - run: ghr -u $CIRCLE_PROJECT_USERNAME -r $CIRCLE_PROJECT_REPONAME -replace $(git describe --abbrev=0 --tags) releases/
