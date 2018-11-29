@@ -15,14 +15,7 @@ pub use jenkins::{Result, Error};
 
 #[allow(unused_imports)]
 use std::collections::BTreeMap;
-use clap::{Arg, App, AppSettings, SubCommand, ArgMatches};
-use std::process;
-
-fn print_error_debug(e: &Error) {
-    for cause in e.iter_chain().skip(1) {
-        warn!("caused by: {}", cause);
-    }
-}
+use clap::{Arg, App, AppSettings, SubCommand, Values, ArgMatches};
 
 fn has_equals(v: String) -> std::result::Result<(), String> {
     if !v.contains(":") {
@@ -31,15 +24,35 @@ fn has_equals(v: String) -> std::result::Result<(), String> {
     Ok(())
 }
 
-fn main() {
-    let app = App::new("jenq")
+fn job_arg() -> Arg<'static, 'static> {
+    Arg::with_name("job-name").required(true).help("Job name")
+}
+fn filter_arg() -> Arg<'static, 'static> {
+    Arg::with_name("filter")
+        .multiple(true)
+        .short("f")
+        .long("filter")
+        .takes_value(true)
+        .value_terminator(":")
+        .validator(has_equals)
+        .help("Filter on a set of key:values in jenkins build parameters")
+}
+
+fn build_cli() -> App<'static, 'static> {
+    App::new("jenq")
         .version(crate_version!())
         .setting(AppSettings::VersionlessSubcommands)
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .setting(AppSettings::ColoredHelp)
         .setting(AppSettings::DeriveDisplayOrder)
         .global_settings(&[AppSettings::ColoredHelp])
-        .about("query jenkins for job results")
+        .subcommand(SubCommand::with_name("completions")
+            .about("Generates completion scripts for your shell")
+            .arg(Arg::with_name("SHELL")
+                .required(true)
+                .possible_values(&["bash", "fish", "zsh"])
+                .help("The shell to generate the script for")))
+            .about("query jenkins for job results")
         .arg(Arg::with_name("verbose")
             .short("v")
             .multiple(true)
@@ -48,26 +61,33 @@ fn main() {
             .short("d")
             .long("debug")
             .help("Adds line numbers to log statements"))
-        .arg(Arg::with_name("job-name")
-            .required(true)
-            .help("Job name"))
-        .arg(Arg::with_name("filter")
-            .multiple(true)
-            .short("f")
-            .long("filter")
-            .takes_value(true)
-            .value_terminator(":")
-            .validator(has_equals)
-            .help("Filter on a set of key:values in jenkins build parameters"))
+        // main subcommands
         .subcommand(SubCommand::with_name("console")
+            .arg(job_arg())
+            .arg(filter_arg())
             .arg(Arg::with_name("number")
                 .help("Build number if not last"))
-            .about("Print the latest jenkins console text for a service deploy"))
+            .about("Print the latest jenkins console text for a service deploy")
         .subcommand(SubCommand::with_name("history")
+            .arg(job_arg())
+            .arg(filter_arg())
             .about("Print the jenkins deployment history for a service"))
         .subcommand(SubCommand::with_name("latest")
-            .about("Print the latest jenkins deployment job for a service"));
+            .arg(job_arg())
+            .arg(filter_arg())
+            .about("Print the latest jenkins deployment job for a service")))
 
+}
+
+fn print_error_debug(e: &Error) {
+    for cause in e.iter_chain().skip(1) {
+        warn!("caused by: {}", cause);
+    }
+}
+
+fn main() {
+    use std::process;
+    let app = build_cli();
     let args = app.get_matches();
     let name = args.subcommand_name().unwrap();
     let _ = run(&args).map_err(|e| {
@@ -98,30 +118,42 @@ fn run(args: &ArgMatches) -> Result<()> {
     dispatch_commands(args)
 }
 
-fn dispatch_commands(a: &ArgMatches) -> Result<()> {
-    let job = a.value_of("job-name").unwrap();
-
+fn make_params(values: Option<Values<'_>>) -> BTreeMap<String, String> {
     let mut params = BTreeMap::new();
-    if let Some(vals) = a.values_of("filter") {
+    if let Some(vals) = values {
         for x in vals {
             let pair = x.split(":").collect::<Vec<_>>();
             params.insert(pair[0].to_string(), pair[1].to_string());
         }
     }
     debug!("Using filters: {:?}", params);
+    params
+}
 
-    return if let Some(_) = a.subcommand_matches("latest") {
+fn dispatch_commands(args: &ArgMatches) -> Result<()> {
+    return if let Some(a) = args.subcommand_matches("completions") {
+        use std::io;
+        let shell = a.value_of("SHELL").unwrap().parse().unwrap();;
+        Ok(build_cli().gen_completions_to("jenq", shell, &mut io::stdout()))
+    }
+    else if let Some(a) = args.subcommand_matches("latest") {
+        let job = a.value_of("job-name").unwrap();
+        let params = make_params(a.values_of("filter"));
         jenkins::latest_build(&job, &params)
     }
-    else if let Some(b) = a.subcommand_matches("console") {
-        if let Some(n) = b.value_of("number") {
+    else if let Some(a) = args.subcommand_matches("console") {
+        let job = a.value_of("job-name").unwrap();
+        let params = make_params(a.values_of("filter"));
+        if let Some(n) = a.value_of("number") {
             let nr : u32 = n.parse().unwrap();
             jenkins::specific_console(&job, nr, &params)
         } else {
             jenkins::latest_console(&job, &params)
         }
     }
-    else if let Some(_) = a.subcommand_matches("history") {
+    else if let Some(a) = args.subcommand_matches("history") {
+        let job = a.value_of("job-name").unwrap();
+        let params = make_params(a.values_of("filter"));
        jenkins::history(&job, &params)
     } else {
         unreachable!()

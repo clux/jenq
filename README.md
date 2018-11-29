@@ -24,30 +24,54 @@ jenq myjobname history
 Get the raw console output of the latest matching job, or numbered job:
 
 ```sh
-jenq myjobname console
-jenq myjobname console 32
+jenq console myjobname
+jenq console myjobname 32
 ```
 
 ## Latest build
 
 ```sh
-jenq myjobname latest
+jenq latest myjobname
 ```
 
 ## Filtering on string parameters
 Query only the entries with a string parameter `APP` whose value is `myapp`.
 
 ```sh
-jenq -f APP:myapp myjobname history
+jenq history myjobname -f APP:myapp
 ```
 
 Last console output for a job with the same parameters:
 
 ```sh
-jenq -f APP:myapp myjobname console
+jenq console myjobname -f APP:myapp
+```
+
+## Installation
+Latest stable with rust installed:
+
+```sh
+cargo install jenq # latest stable
+```
+
+Latest master with rust installed:
+
+```sh
+git clone git@github.com:clux/jenq.git && cd jenq
+cargo build
+ln -sf $PWD/target/debug/jenq /usr/local/bin/jenq
+```
+
+## Autocompletion
+Add this to your `~/.bash_completion` file:
+
+```sh
+if hash jenq 2> /dev/null; then
+    source <(jenq completions bash)
+fi
 ```
 
 ## License
 Apache 2.0 licensed. See LICENSE for details.
 
-Derivative work from [shipcat](https://github.com/Babylonpartners/shipcat) licensed under [Apache 2.0](https://github.com/Babylonpartners/shipcat/blob/master/LICENSE)
+Derivative work from [shipcat](https://github.com/Babylonpartners/shipcat) 0.74.0 licensed under [Apache 2.0](https://github.com/Babylonpartners/shipcat/blob/master/LICENSE)
