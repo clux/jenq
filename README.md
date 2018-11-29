@@ -86,7 +86,7 @@ Latest stable with rust installed:
 cargo install jenq # latest stable
 ```
 
-Latest stable without rust installed:
+Latest stable without rust installed (linux only):
 
 ```sh
 JENQ_VERSION=0.1.1
