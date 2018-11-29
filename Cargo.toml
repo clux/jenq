@@ -2,6 +2,10 @@
 name = "jenq"
 version = "0.1.1"
 authors = ["clux <sszynrae@gmail.com>"]
+categories = ["command-line-utilities"]
+keywords = ["jenkins", "cli", "terminal", "ci"]
+license-file = "LICENSE"
+homepage = "https://github.com/clux/jenq"
 
 [dependencies]
 failure = "0.1.3"
