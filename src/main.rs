@@ -1,24 +1,21 @@
-#[macro_use]
-extern crate clap;
-#[macro_use]
-extern crate log;
+#[macro_use] extern crate clap;
+#[macro_use] extern crate log;
 extern crate loggerv;
 extern crate jenkins_api;
 extern crate chrono;
-#[macro_use]
-extern crate failure;
+#[macro_use] extern crate failure;
 extern crate libc;
 extern crate openssl_probe;
 
+/// Module to actually query jenkins using jenkins_api
 pub mod jenkins;
-pub use jenkins::{Result, Error};
+pub use jenkins::{Result, Error, JobParams};
 
-#[allow(unused_imports)]
 use std::collections::BTreeMap;
 use clap::{Arg, App, AppSettings, SubCommand, Values, ArgMatches};
 
 fn has_equals(v: String) -> std::result::Result<(), String> {
-    if !v.contains(":") {
+    if !v.contains(':') {
         return Err(String::from("Must be a key:value pair"))
     }
     Ok(())
@@ -46,13 +43,13 @@ fn build_cli() -> App<'static, 'static> {
         .setting(AppSettings::ColoredHelp)
         .setting(AppSettings::DeriveDisplayOrder)
         .global_settings(&[AppSettings::ColoredHelp])
+        .about("query jenkins for job results")
         .subcommand(SubCommand::with_name("completions")
             .about("Generates completion scripts for your shell")
-            .arg(Arg::with_name("SHELL")
+            .arg(Arg::with_name("shell")
                 .required(true)
                 .possible_values(&["bash", "fish", "zsh"])
                 .help("The shell to generate the script for")))
-            .about("query jenkins for job results")
         .arg(Arg::with_name("verbose")
             .short("v")
             .multiple(true)
@@ -76,26 +73,20 @@ fn build_cli() -> App<'static, 'static> {
             .arg(job_arg())
             .arg(filter_arg())
             .about("Print the latest jenkins deployment job for a service")))
-
-}
-
-fn print_error_debug(e: &Error) {
-    for cause in e.iter_chain().skip(1) {
-        warn!("caused by: {}", cause);
-    }
 }
 
 fn main() {
-    use std::process;
     let app = build_cli();
     let args = app.get_matches();
     let name = args.subcommand_name().unwrap();
     let _ = run(&args).map_err(|e| {
         error!("{} error: {}", name, e);
-        print_error_debug(&e);
-        process::exit(1);
+        for cause in e.iter_chain().skip(1) {
+            warn!("caused by: {}", cause);
+        }
+        std::process::exit(1);
     });
-    process::exit(0);
+    std::process::exit(0);
 }
 
 fn run(args: &ArgMatches) -> Result<()> {
@@ -118,11 +109,11 @@ fn run(args: &ArgMatches) -> Result<()> {
     dispatch_commands(args)
 }
 
-fn make_params(values: Option<Values<'_>>) -> BTreeMap<String, String> {
+fn make_params(values: Option<Values<'_>>) -> JobParams {
     let mut params = BTreeMap::new();
     if let Some(vals) = values {
         for x in vals {
-            let pair = x.split(":").collect::<Vec<_>>();
+            let pair = x.split(':').collect::<Vec<_>>();
             params.insert(pair[0].to_string(), pair[1].to_string());
         }
     }
@@ -131,10 +122,10 @@ fn make_params(values: Option<Values<'_>>) -> BTreeMap<String, String> {
 }
 
 fn dispatch_commands(args: &ArgMatches) -> Result<()> {
-    return if let Some(a) = args.subcommand_matches("completions") {
-        use std::io;
-        let shell = a.value_of("SHELL").unwrap().parse().unwrap();;
-        Ok(build_cli().gen_completions_to("jenq", shell, &mut io::stdout()))
+    if let Some(a) = args.subcommand_matches("completions") {
+        let shell = a.value_of("shell").unwrap().parse().unwrap();
+        build_cli().gen_completions_to("jenq", shell, &mut std::io::stdout());
+        Ok(())
     }
     else if let Some(a) = args.subcommand_matches("latest") {
         let job = a.value_of("job-name").unwrap();
@@ -157,5 +148,5 @@ fn dispatch_commands(args: &ArgMatches) -> Result<()> {
        jenkins::history(&job, &params)
     } else {
         unreachable!()
-    };
+    }
 }

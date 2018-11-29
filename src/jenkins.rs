@@ -10,6 +10,7 @@ use jenkins_api::{
 use std::env;
 use std::collections::BTreeMap;
 pub use failure::{Error, Fail, Context, Backtrace, ResultExt};
+/// Error handling convenience type
 pub type Result<T> = std::result::Result<T, Error>;
 
 // helpers
@@ -44,7 +45,13 @@ fn get_job(client: &Jenkins, job: &str) -> Result<CommonJob> {
     ?)
 }
 
-fn get_string_params(b: &CommonBuild) -> BTreeMap<String, String> {
+/// Jenkins StringParameters used for job selection/filtering
+///
+/// Type is used for both result from querying jenkins for what parameters exist,
+/// and from arg parser for what parameters we want at what value.
+pub type JobParams = BTreeMap<String, String>;
+
+fn get_string_params(b: &CommonBuild) -> JobParams {
     let mut res = BTreeMap::new();
     for a in &b.actions {
         if let Ok(params) = a.as_variant::<ParametersAction>() {
@@ -59,7 +66,6 @@ fn get_string_params(b: &CommonBuild) -> BTreeMap<String, String> {
     res
 }
 
-pub type JobParams = BTreeMap<String, String>;
 
 // verifies all requested parameters must exist and match requested values
 fn build_satisfies_params(b: &CommonBuild, px: &JobParams) -> bool {
@@ -77,7 +83,6 @@ fn build_satisfies_params(b: &CommonBuild, px: &JobParams) -> bool {
     }
     true
 }
-
 
 
 fn find_build_by_parameter(client: &Jenkins, job: &str, px: &JobParams) -> Result<Option<CommonBuild>> {
@@ -173,6 +178,7 @@ pub fn history(jobname: &str, params: &JobParams) -> Result<()> {
         let link = format!("\x1B]8;;{}\x07{}\x1B]8;;\x07", b.url, b.number);
         // not aligning the build because it's full of escape codes for the link
         println!("{0}   {1:<20} {2:<9?}", link, stamp, b.result);
+        // TODO: maybe add parameter values to table?
     }
     Ok(())
 }
