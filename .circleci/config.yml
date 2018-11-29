@@ -14,8 +14,6 @@ workflows:
               ignore:
                 - master
       - github_release:
-          requires:
-            - mac_build
           filters:
             tags:
               only: /^.*/
