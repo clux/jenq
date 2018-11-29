@@ -16,7 +16,7 @@ export JENKINS_API_USER=user.name
 ## Query history
 Query a table of last matching jobs:
 
-```sh
+```
 jenq myjobname history
 ```
 
@@ -39,7 +39,7 @@ Note: the build numbers are underlined, **clickable links in your terminal** [if
 ## Console output
 Get the raw console output of the latest matching job, or numbered job:
 
-```sh
+```
 jenq console myjobname
 jenq console myjobname 32
 ```
@@ -86,13 +86,13 @@ myjobnames#189 (478354) at 2018-11-27 20:09:44 UTC on https://jenkins.domain.inv
 ## Filtering on string parameters
 Query only the entries with a string parameter `APP` whose value is `myapp`. This works on all the subcommands, and can take multiple filters if the jenkins job is parametrised as such:
 
-```sh
+```
 jenq history myjobname -f APP:myapp -f VERSION=0.1.2
 ```
 
 Last console output for a job with the same parameters:
 
-```sh
+```
 jenq console myjobname -f APP:myapp
 ```
 
@@ -110,6 +110,15 @@ git clone git@github.com:clux/jenq.git && cd jenq
 cargo build
 ln -sf $PWD/target/debug/jenq /usr/local/bin/jenq
 ```
+
+Latest stable without rust installed:
+
+```sh
+JENQ_VERSION=0.1.1
+curl -sSL https://github.com/clux/jenq/releases/download/${JENQ_VERSION}/jenq.x86_64-unknown-linux-musl.tar.gz | tar xz -C /usr/local
+```
+
+Substitute `JENQ_VERSION` variable for the [version you want](https://github.com/clux/jenq/releases).
 
 ## Autocompletion
 Add this to your `~/.bash_completion` file:
