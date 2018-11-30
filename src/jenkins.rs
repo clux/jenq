@@ -89,14 +89,12 @@ fn find_build_by_parameter(client: &Jenkins, job: &str, px: &JobParams) -> Resul
     let job = get_job(&client, job)?;
     let len = job.builds.len();
     for sbuild in job.builds {
-        match sbuild.get_full_build(&client) {
-            Ok(build) => {
-                debug!("scanning build :{:?}", build);
-                if build_satisfies_params(&build, px) {
-                    return Ok(Some(build))
-                }
+        // ignore errors to fetch full builds here (builds scheduling can fail)
+        if let Ok(build) = sbuild.get_full_build(&client) {
+            debug!("scanning build :{:?}", build);
+            if build_satisfies_params(&build, px) {
+                return Ok(Some(build))
             }
-            Err(_) => continue,
         }
     }
     warn!("No completed deploy jobs found for {:?} in the last {} builds", px, len);
@@ -108,14 +106,12 @@ fn find_builds_by_parameter(client: &Jenkins, job: &str, px: &JobParams) -> Resu
     let mut builds = vec![];
     let len = job.builds.len();
     for sbuild in job.builds {
-        match sbuild.get_full_build(&client) {
-            Ok(build) => {
-                debug!("scanning build :{:?}", build);
-                if build_satisfies_params(&build, px) {
-                    builds.push(build);
-                }
+        // ignore errors to fetch full builds here (builds scheduling can fail)
+        if let Ok(build) = sbuild.get_full_build(&client) {
+            debug!("scanning build :{:?}", build);
+            if build_satisfies_params(&build, px) {
+                builds.push(build);
             }
-            Err(_) => continue,
         }
     }
     if builds.is_empty() {
@@ -129,20 +125,14 @@ fn find_build_by_nr(client: &Jenkins, job: &str, nr: u32, px: &JobParams) -> Res
     let len = job.builds.len();
     for sbuild in job.builds {
         if sbuild.number == nr {
-            match sbuild.get_full_build(&client) {
-                Ok(build) => {
-                    if build_satisfies_params(&build, px) {
-                        return Ok(Some(build))
-                    }
-                    else {
-                        warn!("Build found, but it's not for {:?}", px);
-                        return Ok(None)
-                    }
-                },
-                Err(_) => {
-                    warn!("Failed to fetch build number {}", nr);
-                    return Ok(None)
-                }
+            // handle Err here if we failed because we asked for this number
+            let build = sbuild.get_full_build(&client)?;
+            if build_satisfies_params(&build, px) {
+                return Ok(Some(build))
+            }
+            else {
+                warn!("Build {} found, but it's not for {:?}", nr, px);
+                return Ok(None)
             }
         }
     }
@@ -187,7 +177,7 @@ pub fn history(jobname: &str, params: &JobParams) -> Result<()> {
 pub fn latest_console(jobname: &str, params: &JobParams) -> Result<()> {
     let client = get_client()?;
     if let Some(build) = find_build_by_parameter(&client, &jobname, params)? {
-        let console = build.get_console(&client).unwrap();
+        let console = build.get_console(&client)?;
         print!("{}", console);
     }
     Ok(())
@@ -197,7 +187,7 @@ pub fn latest_console(jobname: &str, params: &JobParams) -> Result<()> {
 pub fn specific_console(jobname: &str, nr: u32, params: &JobParams) -> Result<()> {
     let client = get_client()?;
     if let Some(build) = find_build_by_nr(&client, &jobname, nr, params)? {
-        let console = build.get_console(&client).unwrap();
+        let console = build.get_console(&client)?;
         print!("{}", console);
     }
     Ok(())
