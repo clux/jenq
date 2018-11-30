@@ -97,6 +97,11 @@ curl -sSL https://github.com/clux/jenq/releases/download/${JENQ_VERSION}/jenq.x8
 
 Substitute `JENQ_VERSION` variable for the [version you want](https://github.com/clux/jenq/releases).
 
+## Package managers
+For updates through your distro, install through a package manager (where exists):
+
+- `yay install jenq` (via [AUR](https://aur.archlinux.org/packages/jenq/) for Arch Linux)
+
 ## Autocompletion
 Add this to your `~/.bash_completion` file:
 
