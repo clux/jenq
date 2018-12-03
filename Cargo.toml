@@ -5,7 +5,7 @@ authors = ["clux <sszynrae@gmail.com>"]
 categories = ["command-line-utilities"]
 keywords = ["jenkins", "cli", "terminal", "ci"]
 license-file = "LICENSE"
-description = "Query jenkins for jobs matching filters"
+description = "Query jenkins build history for parametrised jobs"
 homepage = "https://github.com/clux/jenq"
 readme = "README.md"
 

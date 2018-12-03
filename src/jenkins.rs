@@ -97,7 +97,7 @@ fn find_build_by_parameter(client: &Jenkins, job: &str, px: &JobParams) -> Resul
             }
         }
     }
-    warn!("No completed deploy jobs found for {:?} in the last {} builds", px, len);
+    warn!("No completed jobs found for {:?} in the last {} builds", px, len);
     Ok(None)
 }
 
@@ -183,7 +183,7 @@ pub fn latest_console(jobname: &str, params: &JobParams) -> Result<()> {
     Ok(())
 }
 
-/// Print the consoleText from a specific deployment nr for a service in a give region
+/// Print the consoleText from a specific job nr
 pub fn specific_console(jobname: &str, nr: u32, params: &JobParams) -> Result<()> {
     let client = get_client()?;
     if let Some(build) = find_build_by_nr(&client, &jobname, nr, params)? {

@@ -43,7 +43,7 @@ fn build_cli() -> App<'static, 'static> {
         .setting(AppSettings::ColoredHelp)
         .setting(AppSettings::DeriveDisplayOrder)
         .global_settings(&[AppSettings::ColoredHelp])
-        .about("query jenkins for jobs matching filters")
+        .about("Query jenkins build history for parametrised jobs")
         .subcommand(SubCommand::with_name("completions")
             .about("Generates completion scripts for your shell")
             .arg(Arg::with_name("shell")
@@ -64,15 +64,15 @@ fn build_cli() -> App<'static, 'static> {
             .arg(filter_arg())
             .arg(Arg::with_name("number")
                 .help("Build number if not last"))
-            .about("Print the latest jenkins console text for a service deploy"))
+            .about("Print the latest matching jenkins console text for a job"))
         .subcommand(SubCommand::with_name("history")
             .arg(job_arg())
             .arg(filter_arg())
-            .about("Print the jenkins deployment history for a service"))
+            .about("Print the matching build history and results for a job"))
         .subcommand(SubCommand::with_name("latest")
             .arg(job_arg())
             .arg(filter_arg())
-            .about("Print the latest jenkins deployment job for a service"))
+            .about("Print the latest matching jenkins build for a job"))
 }
 
 fn main() {

@@ -2,7 +2,7 @@
 [![CircleCI](https://circleci.com/gh/clux/jenq.svg?style=shield)](https://circleci.com/gh/clux/jenq)
 [![Crates.io](https://img.shields.io/crates/v/jenq.svg)](https://crates.io/crates/jenq)
 
-Query for jenkins history for parametrised jobs.
+Query jenkins build history for parametrised jobs.
 
 ## Authentication
 Set evars to authenticate with jenkins:
